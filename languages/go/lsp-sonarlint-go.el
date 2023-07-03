@@ -1,4 +1,4 @@
-;;; lsp-sonarlint-ruby.el --- lsp-sonarlint ruby module             -*- lexical-binding: t; -*-
+;;; lsp-sonarlint-go.el --- lsp-sonarlint go module             -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020  Fermin Munoz
 ;; URL: https://gitlab.com/sasanidas/lsp-sonarlint
@@ -18,46 +18,46 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Especific configuration for the sonarlint ruby plugin.
+;; Especific configuration for the sonarlint go plugin.
 
 ;; This is NOT and official Sonarlint extension.
 
 
 ;;; Code:
 
-(defgroup lsp-sonarlint-ruby nil
-  "lsp-sonarlint ruby analyzer group"
+(defgroup lsp-sonarlint-go nil
+  "lsp-sonarlint go analyzer group"
   :group 'lsp-sonarlint
-  :version '(lsp-sonarlint-ruby . "1.8.3"))
+  :version '(lsp-sonarlint-go . "3.28.0"))
 
-(defcustom lsp-sonarlint-ruby-enabled nil
-  "Enable lsp-sonarlint-ruby plugin."
-  :group 'lsp-sonarlint-ruby
+(defcustom lsp-sonarlint-go-enabled nil
+  "Enable lsp-sonarlint-go plugin."
+  :group 'lsp-sonarlint-go
   :type 'boolean)
 
-(defcustom lsp-sonarlint-ruby-download-url
-  "https://binaries.sonarsource.com/Distribution/sonar-ruby-plugin/sonar-ruby-plugin-1.8.3.2219.jar"
-  "Ruby plugin download URL."
-  :group 'lsp-sonarlint-ruby
+(defcustom lsp-sonarlint-go-download-url
+  "https://repo.maven.apache.org/maven2/org/sonarsource/go/sonar-go-plugin/3.28.0.9490/sonar-go-plugin-3.28.0.9490.jar"
+  "Go plugin download URL."
+  :group 'lsp-sonarlint-go
   :type 'string)
 
-(defcustom lsp-sonarlint-ruby-analyzer-path
+(defcustom lsp-sonarlint-go-analyzer-path
 (concat
    (file-name-directory load-file-name)
-   "sonar-ruby.jar")
-"Lsp-sonarlint ruby analyzer location."
-  :group 'lsp-sonarlint-ruby
+   "sonar-go.jar")
+  "Lsp-sonarlint go analyzer location."
+  :group 'lsp-sonarlint-go
   :type 'file)
 
-(defvar lsp-sonarlint-ruby-doc-url "https://www.sonarsource.com/ruby/"
+(defvar lsp-sonarlint-go-doc-url "https://www.sonarsource.com/go/"
   "Documentation sonarsource URL.")
 
-(defvar lsp-sonarlint-ruby-repository-url "https://github.com/SonarSource/slang/"
+(defvar lsp-sonarlint-go-repository-url "https://github.com/SonarSource/slang/"
   "Official sonarlint code extension repository.")
 
 
 
 
 
-(provide 'lsp-sonarlint-ruby)
-;;; lsp-sonarlint-ruby.el ends here
+(provide 'lsp-sonarlint-go)
+;;; lsp-sonarlint-go.el ends here

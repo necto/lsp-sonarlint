@@ -53,7 +53,7 @@
   "Documentation sonarsource URL.")
 
 (defvar lsp-sonarlint-scala-repository-url "https://github.com/SonarSource/slang/"
-  "Official sonarlint code extension reposiroty.")
+  "Official sonarlint code extension repository.")
 
 
 

@@ -28,7 +28,7 @@
 (defgroup lsp-sonarlint-typescript nil
   "lsp-sonarlint typescript analyzer group"
   :group 'lsp-sonarlint
-  :version '(lsp-sonarlint-typescript . "8.2.0"))
+  :version '(lsp-sonarlint-typescript . "10.1.0"))
 
 (defcustom lsp-sonarlint-typescript-enabled nil
   "Enable lsp-sonarlint-typescript plugin."
@@ -36,7 +36,7 @@
   :type 'boolean)
 
 (defcustom lsp-sonarlint-typescript-download-url
-  "https://binaries.sonarsource.com/Distribution/sonar-javascript-plugin/sonar-javascript-plugin-8.2.0.16042.jar"
+  "https://repo.maven.apache.org/maven2/org/sonarsource/javascript/sonar-javascript-plugin/10.1.0.21143/sonar-javascript-plugin-10.1.0.21143.jar"
   "Typescript plugin download URL."
   :group 'lsp-sonarlint-typescript
   :type 'string)
@@ -53,7 +53,7 @@
   "Documentation sonarsource URL.")
 
 (defvar lsp-sonarlint-typescript-repository-url "https://github.com/SonarSource/SonarJS"
-  "Official sonarlint code extension reposiroty.")
+  "Official sonarlint code extension repository.")
 
 (provide 'lsp-sonarlint-typescript)
 ;;; lsp-sonarlint-typescript.el ends here

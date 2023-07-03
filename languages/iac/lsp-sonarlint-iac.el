@@ -1,4 +1,4 @@
-;;; lsp-sonarlint-ruby.el --- lsp-sonarlint ruby module             -*- lexical-binding: t; -*-
+;;; lsp-sonarlint-iac.el --- lsp-sonarlint infrastructure-as-code module   -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020  Fermin Munoz
 ;; URL: https://gitlab.com/sasanidas/lsp-sonarlint
@@ -18,46 +18,46 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Especific configuration for the sonarlint ruby plugin.
+;; Especific configuration for the sonarlint IaC plugin.
 
 ;; This is NOT and official Sonarlint extension.
 
 
 ;;; Code:
 
-(defgroup lsp-sonarlint-ruby nil
-  "lsp-sonarlint ruby analyzer group"
+(defgroup lsp-sonarlint-iac nil
+  "lsp-sonarlint IaC analyzer group"
   :group 'lsp-sonarlint
-  :version '(lsp-sonarlint-ruby . "1.8.3"))
+  :version '(lsp-sonarlint-iac . "1.16.0"))
 
-(defcustom lsp-sonarlint-ruby-enabled nil
-  "Enable lsp-sonarlint-ruby plugin."
-  :group 'lsp-sonarlint-ruby
+(defcustom lsp-sonarlint-iac-enabled nil
+  "Enable lsp-sonarlint-iac plugin."
+  :group 'lsp-sonarlint-iac
   :type 'boolean)
 
-(defcustom lsp-sonarlint-ruby-download-url
-  "https://binaries.sonarsource.com/Distribution/sonar-ruby-plugin/sonar-ruby-plugin-1.8.3.2219.jar"
-  "Ruby plugin download URL."
-  :group 'lsp-sonarlint-ruby
+(defcustom lsp-sonarlint-iac-download-url
+  "https://repo.maven.apache.org/maven2/org/sonarsource/iac/sonar-iac-plugin/1.16.0.3845/sonar-iac-plugin-1.16.0.3845.jar"
+  "IaC plugin download URL."
+  :group 'lsp-sonarlint-iac
   :type 'string)
 
-(defcustom lsp-sonarlint-ruby-analyzer-path
+(defcustom lsp-sonarlint-iac-analyzer-path
 (concat
    (file-name-directory load-file-name)
-   "sonar-ruby.jar")
-"Lsp-sonarlint ruby analyzer location."
-  :group 'lsp-sonarlint-ruby
+   "sonar-iac.jar")
+  "Lsp-sonarlint IaC analyzer location."
+  :group 'lsp-sonarlint-iac
   :type 'file)
 
-(defvar lsp-sonarlint-ruby-doc-url "https://www.sonarsource.com/ruby/"
+(defvar lsp-sonarlint-iac-doc-url "https://www.sonarsource.com/knowledge/languages/terraform/"
   "Documentation sonarsource URL.")
 
-(defvar lsp-sonarlint-ruby-repository-url "https://github.com/SonarSource/slang/"
+(defvar lsp-sonarlint-iac-repository-url "https://github.com/SonarSource/sonar-iac/"
   "Official sonarlint code extension repository.")
 
 
 
 
 
-(provide 'lsp-sonarlint-ruby)
-;;; lsp-sonarlint-ruby.el ends here
+(provide 'lsp-sonarlint-iac)
+;;; lsp-sonarlint-iac.el ends here
