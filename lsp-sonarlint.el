@@ -101,7 +101,7 @@ e.g. `-Xmx1024m`."
   :type 'string)
 
 (defcustom lsp-sonarlint-server-download-url
-  "https://binaries.sonarsource.com/Distribution/sonarlint-language-server/sonarlint-language-server-4.6.0.2652.jar"
+  "https://repox.jfrog.io/repox/sonarsource/org/sonarsource/sonarlint/ls/sonarlint-language-server/2.19.0.72769/sonarlint-language-server-2.19.0.72769.jar"
   "Sonarlint Language Server jar file download URL."
   :group 'lsp-sonarlint
   :type 'string)
@@ -109,7 +109,7 @@ e.g. `-Xmx1024m`."
 (let ((languages-directory-path (concat (file-name-directory load-file-name) "languages")))
   (if (file-directory-p languages-directory-path)
       (add-to-list 'load-path languages-directory-path)
-    (error "There were and error with the `load-file-name` function")))
+    (error "There was an error with the `load-file-name` function")))
 
 (defun lsp-sonarlint--plugin-list ()
   "Check for the enabled extensions and return a path list.
@@ -131,7 +131,7 @@ analyzer"
 		       enabled-member--analyzer-path)
 		(when (yes-or-no-p "lsp-sonarlint language plugin not found, do you want to download it? ")
 		  (url-copy-file enabled-member--download-url enabled-member--analyzer-path)))
-	      (concat "file://"  enabled-member--analyzer-path " ")))
+	      enabled-member--analyzer-path))
 	  lsp-sonarlint--enabled-plugins)))
 
 (defun lsp-sonarlint--code-action-open-rule (rule)
@@ -150,8 +150,9 @@ analyzer"
 (defun lsp-sonarlint-server-start-fun (port)
   "Lsp-sonarlint start function, it need PORT as parameter."
   (-concat
-   `("java" "-jar" ,(eval  lsp-sonarlint-server-path )  ,(number-to-string port))
-   (lsp-sonarlint--plugin-list)))
+   `("java" "-jar" ,(eval  lsp-sonarlint-server-path )  ,(format "-port=%d" port))
+   (mapcar (lambda (plugin-path) (format "-analyzers=%s" plugin-path))
+           (lsp-sonarlint--plugin-list))))
 
 
 (defconst lsp-sonarlint--action-handlers
@@ -165,11 +166,17 @@ analyzer"
    ("sonarlint.output.showAnalyzerLogs" lsp-sonarlint-show-analyzer-logs)
    ("sonarlint.ls.vmargs" lsp-sonarlint-vmargs)))
 
+(defun lsp-sonarlint--request-handlers ()
+  (let ((ht (make-hash-table :test 'equal)))
+    (puthash "sonarlint/isOpenInEditor" (lambda (_workspace _params) t) ht)
+    ht))
+
 (lsp-register-client
  (make-lsp-client
   :new-connection (lsp-tcp-server-command 'lsp-sonarlint-server-start-fun)
   :major-modes lsp-sonarlint-modes-enabled
   :priority -1
+  :request-handlers (lsp-sonarlint--request-handlers)
   :multi-root t
   :add-on? t
   :server-id 'sonarlint
