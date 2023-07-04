@@ -4,7 +4,8 @@
 (require 'lsp-sonarlint)
 (require 'lsp-sonarlint-python)
 
-(defun lsp-sonarlint--get-issues (file knob-symbol)
+(defun lsp-sonarlint--get-issues (file knob-symbol &optional mode)
+  (setq mode (or mode #'python-mode)) ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
   (let ((lsp-enabled-clients '(sonarlint))
         (dir (file-name-directory file)))
     (lsp-workspace-folders-add dir)
@@ -14,7 +15,7 @@
               (lsp-sonarlint-plugin-autodownload t))
           (with-current-buffer buf
             (cl-letf (((symbol-value knob-symbol) t))
-              (python-mode) ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
+              (funcall mode)
               (lsp))
             (let ((diagnostics-updated nil))
               (cl-flet ((check-diags-for-file ()
@@ -51,6 +52,8 @@
     (should (equal (lsp-sonarlint--get-issue-codes issues)
                    '("Web:S1135")))))
 
+;; javascript-sample.js must have a distinct name from sample.ts,
+;; otherwise the javascript/typescript plugin gets confused.
 (ert-deftest lsp-sonarlint-js-reports-issues ()
   (let ((issues (lsp-sonarlint--get-issues "/home/arseniy/proj/lsp-sonarlint/fixtures/javascript-sample.js"
                                            'lsp-sonarlint-javascript-enabled)))
@@ -68,3 +71,17 @@
                                            'lsp-sonarlint-php-enabled)))
     (should (equal (lsp-sonarlint--get-issue-codes issues)
                    '("php:S1135" "php:S1780")))))
+
+(ert-deftest lsp-sonarlint-xml-reports-issues ()
+  (let ((issues (lsp-sonarlint--get-issues "/home/arseniy/proj/lsp-sonarlint/fixtures/sample.xml"
+                                           'lsp-sonarlint-xml-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("xml:S1135")))))
+
+;; "text" plugin detects secrets and bidirectional unicode characters
+(ert-deftest lsp-sonarlint-text-reports-issues ()
+  (let ((issues (lsp-sonarlint--get-issues "/home/arseniy/proj/lsp-sonarlint/fixtures/secrets.java"
+                                           'lsp-sonarlint-text-enabled
+                                           #'java-mode)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("java:S1118" "java:S1220" "secrets:S6290" "secrets:S6290" "secrets:S6290")))))
