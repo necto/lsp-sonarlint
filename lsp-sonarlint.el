@@ -106,6 +106,11 @@ e.g. `-Xmx1024m`."
   :group 'lsp-sonarlint
   :type 'string)
 
+(defcustom lsp-sonarlint-plugin-autodownload nil
+  "Whether to go ahead and download missing plugins not asking for a confirmation."
+  :group 'lsp-sonarlint
+  :type 'boolean)
+
 (let ((languages-directory-path (concat (file-name-directory load-file-name) "languages")))
   (if (file-directory-p languages-directory-path)
       (add-to-list 'load-path languages-directory-path)
@@ -129,7 +134,10 @@ analyzer"
 		    (eval (intern (concat (format "%s" (car enabled-member) ) "-analyzer-path")))))
 	      (unless (file-exists-p
 		       enabled-member--analyzer-path)
-		(when (yes-or-no-p "lsp-sonarlint language plugin not found, do you want to download it? ")
+                (when (or lsp-sonarlint-plugin-autodownload
+                          (yes-or-no-p
+                           (format "%s language plugin not found, do you want to download it? "
+                                   (car enabled-member))))
 		  (url-copy-file enabled-member--download-url enabled-member--analyzer-path)))
 	      enabled-member--analyzer-path))
 	  lsp-sonarlint--enabled-plugins)))
