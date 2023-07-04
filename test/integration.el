@@ -85,3 +85,9 @@
                                            #'java-mode)))
     (should (equal (lsp-sonarlint--get-issue-codes issues)
                    '("java:S1118" "java:S1220" "secrets:S6290" "secrets:S6290" "secrets:S6290")))))
+
+(ert-deftest lsp-sonarlint-go-reports-issues ()
+  (let ((issues (lsp-sonarlint--get-issues "/home/arseniy/proj/lsp-sonarlint/fixtures/sample.go"
+                                           'lsp-sonarlint-go-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("go:S1135")))))

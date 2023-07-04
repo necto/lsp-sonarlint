@@ -53,6 +53,7 @@
   :type 'file)
 
 (defcustom lsp-sonarlint-modes-enabled '(php-mode
+                                         go-mode
                                          html-mode
                                          web-mode
                                          js-mode
@@ -60,7 +61,8 @@
                                          rjsx-mode
                                          typescript-mode
                                          typescript-tsx-mode
-                                         python-mode java-mode
+                                         python-mode
+                                         java-mode
                                          ruby-mode
                                          scala-mode
                                          xml-mode

@@ -28,7 +28,7 @@
 (defgroup lsp-sonarlint-go nil
   "lsp-sonarlint go analyzer group"
   :group 'lsp-sonarlint
-  :version '(lsp-sonarlint-go . "3.28.0"))
+  :version '(lsp-sonarlint-go . "1.12.0"))
 
 (defcustom lsp-sonarlint-go-enabled nil
   "Enable lsp-sonarlint-go plugin."
@@ -36,7 +36,7 @@
   :type 'boolean)
 
 (defcustom lsp-sonarlint-go-download-url
-  "https://repo.maven.apache.org/maven2/org/sonarsource/go/sonar-go-plugin/3.28.0.9490/sonar-go-plugin-3.28.0.9490.jar"
+  "https://repo.maven.apache.org/maven2/org/sonarsource/slang/sonar-go-plugin/1.12.0.4259/sonar-go-plugin-1.12.0.4259.jar"
   "Go plugin download URL."
   :group 'lsp-sonarlint-go
   :type 'string)
