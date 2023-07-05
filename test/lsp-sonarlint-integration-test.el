@@ -10,7 +10,8 @@
       (unwind-protect
           (progn
             (add-hook hook #'setter)
-            (with-timeout (timeout) (while (not done) (sit-for 0.1 t))))
+            (with-timeout (timeout (error "Timed out waiting for %s" hook))
+              (while (not done) (sit-for 0.1 t))))
         (remove-hook hook #'setter)))))
 
 (defun lsp-sonarlint--get-issues (file knob-symbol)
@@ -45,7 +46,7 @@
                  (when (< 0 (seq-reduce '+ stats 0))
                    (setq diagnostics-updated t))))
              'lsp-diagnostics-updated-hook
-             10)
+             30)
             (setq result (gethash file (lsp-diagnostics t))))
           (kill-buffer buf) ;; TODO: wait for finishing the teardown? lsp-after-uninitialized-functions lsp-unconfigure-hook
           result)
