@@ -44,7 +44,7 @@
 (defcustom lsp-sonarlint-typescript-analyzer-path
 (concat
    (file-name-directory load-file-name)
-   "sonar-typescript.jar")
+   "sonar-javascript.jar") ;; Note: it is the same as for javascript, and that is intentional
   "Lsp-sonarlint typescript analyzer location."
   :group 'lsp-sonarlint-typescript
   :type 'file)

@@ -5,7 +5,8 @@
 (require 'lsp-sonarlint-python)
 
 (defun lsp-sonarlint--get-issues (file knob-symbol &optional mode)
-  (setq mode (or mode #'python-mode)) ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
+  ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
+  (setq mode (or mode #'python-mode))
   (let ((lsp-enabled-clients '(sonarlint))
         (dir (file-name-directory file)))
     (lsp-workspace-folders-add dir)

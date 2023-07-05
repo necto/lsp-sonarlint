@@ -116,6 +116,13 @@ e.g. `-Xmx1024m`."
       (add-to-list 'load-path languages-directory-path)
     (error "There was an error with the `load-file-name` function")))
 
+(defun lsp-sonarlint--remove-duplicate-plugins (jars)
+  "Return copy of JARS with duplicates removed, otherwise SonarLint complains.
+
+The duplicates may occur if the same plugin implements different languages,
+for example sonar-javascript.jar covers both JavaScript and TypeScript."
+  (cl-remove-duplicates jars :test #'equal :key (lambda (jar-path) (file-name-base jar-path))))
+
 (defun lsp-sonarlint--plugin-list ()
   "Check for the enabled extensions and return a path list.
 If the analyzer path is not a file, it ask for download the
@@ -127,20 +134,21 @@ analyzer"
 		       t))
 		   (custom-group-members 'lsp-sonarlint t))))
 
-    (-map (lambda (enabled-member)
-	    (let* ((enabled-member--download-url
-		    (eval (intern (concat (format "%s" (car enabled-member) ) "-download-url"))))
-		   (enabled-member--analyzer-path
-		    (eval (intern (concat (format "%s" (car enabled-member) ) "-analyzer-path")))))
-	      (unless (file-exists-p
-		       enabled-member--analyzer-path)
-                (when (or lsp-sonarlint-plugin-autodownload
-                          (yes-or-no-p
-                           (format "%s language plugin not found, do you want to download it? "
-                                   (car enabled-member))))
-		  (url-copy-file enabled-member--download-url enabled-member--analyzer-path)))
-	      enabled-member--analyzer-path))
-	  lsp-sonarlint--enabled-plugins)))
+    (lsp-sonarlint--remove-duplicate-plugins
+     (-map (lambda (enabled-member)
+             (let* ((enabled-member--download-url
+                     (eval (intern (concat (format "%s" (car enabled-member) ) "-download-url"))))
+                    (enabled-member--analyzer-path
+                     (eval (intern (concat (format "%s" (car enabled-member) ) "-analyzer-path")))))
+               (unless (file-exists-p
+                        enabled-member--analyzer-path)
+                 (when (or lsp-sonarlint-plugin-autodownload
+                           (yes-or-no-p
+                            (format "%s language plugin not found, do you want to download it? "
+                                    (car enabled-member))))
+                   (url-copy-file enabled-member--download-url enabled-member--analyzer-path)))
+               enabled-member--analyzer-path))
+           lsp-sonarlint--enabled-plugins))))
 
 (defun lsp-sonarlint--code-action-open-rule (rule)
   "Create an HTML rendered buffer with the RULE text in it."
