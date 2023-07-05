@@ -14,15 +14,10 @@
         (remove-hook hook #'setter)))))
 
 (defun lsp-sonarlint--get-issues (file knob-symbol)
-  (print (format "fixture dir:%s" (lsp-sonarlint--fixtures-dir)))
-  (print (format "Looking for issues in file %s" file))
-  (message (format "Looking for issues in file %s" file))
-  (print knob-symbol)
   ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
   (let ((lsp-enabled-clients '(sonarlint))
         (dir (file-name-directory file))
-
-        (lsp-sonarlint-show-analyzer-logs t) ;; Try to show some verbose logs
+        (python-indent-offset 4) ;; Silent the warning when enabling python-mode in non-python files
         ;; Disable all plugins to focus only on the issues from the knob-symbol
         (lsp-sonarlint-go-enabled nil)
         (lsp-sonarlint-html-enabled nil)
@@ -41,7 +36,9 @@
           (with-current-buffer buf
             (cl-letf (((symbol-value knob-symbol) t))
               (python-mode) ;; Any prog mode that triggers lsp-sonarlint triggers all its analyzers
-              (lsp)) ;; TODO: wait for finishing the init? lsp-after-initialize-hook
+              (lsp)
+              (print (with-current-buffer "*lsp-log*" (buffer-substring-no-properties (point-min) (point-max))))
+              ) ;; TODO: wait for finishing the init? lsp-after-initialize-hook
             (lsp-sonarlint--wait-for
              (lambda ()
                (when-let ((stats (lsp-diagnostics-stats-for file)))
