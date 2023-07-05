@@ -26,6 +26,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distrubution: 'temurin'
+        java-version: 11
+
     - uses: jcs090218/setup-emacs@master
       with:
         version: ${{ matrix.emacs-version }}
