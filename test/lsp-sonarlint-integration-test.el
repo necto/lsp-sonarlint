@@ -14,9 +14,15 @@
         (remove-hook hook #'setter)))))
 
 (defun lsp-sonarlint--get-issues (file knob-symbol)
+  (print (format "fixture dir:%s" (lsp-sonarlint--fixtures-dir)))
+  (print (format "Looking for issues in file %s" file))
+  (message (format "Looking for issues in file %s" file))
+  (print knob-symbol)
   ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
   (let ((lsp-enabled-clients '(sonarlint))
         (dir (file-name-directory file))
+
+        (lsp-sonarlint-show-analyzer-logs t) ;; Try to show some verbose logs
         ;; Disable all plugins to focus only on the issues from the knob-symbol
         (lsp-sonarlint-go-enabled nil)
         (lsp-sonarlint-html-enabled nil)
