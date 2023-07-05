@@ -56,8 +56,5 @@
   "Official sonarlint code extension repository.")
 
 
-
-
-
 (provide 'lsp-sonarlint-xml)
 ;;; lsp-sonarlint-xml.el ends here
