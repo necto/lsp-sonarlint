@@ -46,7 +46,7 @@
                  (when (< 0 (seq-reduce '+ stats 0))
                    (setq diagnostics-updated t))))
              'lsp-diagnostics-updated-hook
-             30)
+             300)
             (setq result (gethash file (lsp-diagnostics t))))
           (kill-buffer buf) ;; TODO: wait for finishing the teardown? lsp-after-uninitialized-functions lsp-unconfigure-hook
           result)
