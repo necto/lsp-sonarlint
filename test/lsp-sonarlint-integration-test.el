@@ -14,6 +14,21 @@
               (while (not done) (sit-for 0.1 t))))
         (remove-hook hook #'setter)))))
 
+(defun find-matching-buffers (regex)
+  "Find buffers whose names match the given regular expression."
+  (let (matching-buffers)
+    (dolist (buffer (buffer-list))
+      (when (string-match regex (buffer-name buffer))
+        (push buffer matching-buffers)))
+    matching-buffers))
+
+(defun print-tcp-server-buf ()
+  (message (with-current-buffer "*tcp-server-sonarlint*::stderr"
+           (buffer-substring-no-properties (point-min) (point-max))))
+  (when-let ((buffers (find-matching-buffers "\\*tcp-server-sonarlint\\* <")))
+    (message (with-current-buffer (car buffers)
+             (buffer-substring-no-properties (point-min) (point-max))))))
+
 (defun lsp-sonarlint--get-issues (file knob-symbol)
   ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
   (let ((lsp-enabled-clients '(sonarlint))
@@ -38,7 +53,7 @@
             (cl-letf (((symbol-value knob-symbol) t))
               (python-mode) ;; Any prog mode that triggers lsp-sonarlint triggers all its analyzers
               (lsp)
-              (print (with-current-buffer "*lsp-log*" (buffer-substring-no-properties (point-min) (point-max))))
+              (print-tcp-server-buf)
               ) ;; TODO: wait for finishing the init? lsp-after-initialize-hook
             (lsp-sonarlint--wait-for
              (lambda ()
@@ -46,7 +61,7 @@
                  (when (< 0 (seq-reduce '+ stats 0))
                    (setq diagnostics-updated t))))
              'lsp-diagnostics-updated-hook
-             300)
+             30)
             (setq result (gethash file (lsp-diagnostics t))))
           (kill-buffer buf) ;; TODO: wait for finishing the teardown? lsp-after-uninitialized-functions lsp-unconfigure-hook
           result)
