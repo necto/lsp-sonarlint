@@ -5,7 +5,7 @@
 ;; Author: Fermin MF <fmfs@posteo.net>
 ;; Created: 13 Jun 2020
 ;; Version: 0.0.1
-;; Keywords: languages, tools, php, javascript, xml, html, java, python
+;; Keywords: languages, tools, php, javascript, typescript, go, xml, html, java, python
 ;; URL: https://github.com/emacs-lsp/lsp-sonarlint
 ;; Package-Requires: ((emacs "25") (dash "2.12.0") (lsp-mode "6.3") (ht "2.3"))
 ;; License: GPL-3.0-or-later
