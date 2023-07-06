@@ -5,13 +5,13 @@
 
 (defun lsp-sonarlint--wait-for (predicate hook timeout)
   (let ((done nil))
-    (cl-flet ((setter (lambda () (when (funcall predicate)
-                              (setq done t)))))
+    (cl-flet ((setter (lambda (&rest args) (when (apply predicate args)
+                                        (setq done t)))))
       (unwind-protect
           (progn
             (add-hook hook #'setter)
             (with-timeout (timeout (error "Timed out waiting for %s" hook))
-              (while (not done) (sit-for 0.1 t))))
+              (while (not done) (accept-process-output nil 0.1))))
         (remove-hook hook #'setter)))))
 
 (defun find-matching-buffers (regex)
@@ -44,28 +44,29 @@
         (lsp-sonarlint-text-enabled nil)
         (lsp-sonarlint-typescript-enabled nil)
         (lsp-sonarlint-xml-enabled nil))
-    (lsp-workspace-folders-add dir)
-    (unwind-protect
         (let ((buf (find-file-noselect file))
-              (result nil)
               (lsp-sonarlint-plugin-autodownload t))
-          (with-current-buffer buf
-            (cl-letf (((symbol-value knob-symbol) t))
-              (python-mode) ;; Any prog mode that triggers lsp-sonarlint triggers all its analyzers
-              (lsp)
-              (print-tcp-server-buf)
-              ) ;; TODO: wait for finishing the init? lsp-after-initialize-hook
-            (lsp-sonarlint--wait-for
-             (lambda ()
-               (when-let ((stats (lsp-diagnostics-stats-for file)))
-                 (when (< 0 (seq-reduce '+ stats 0))
-                   (setq diagnostics-updated t))))
-             'lsp-diagnostics-updated-hook
-             30)
-            (setq result (gethash file (lsp-diagnostics t))))
-          (kill-buffer buf) ;; TODO: wait for finishing the teardown? lsp-after-uninitialized-functions lsp-unconfigure-hook
-          result)
-      (lsp-workspace-folders-remove dir))))
+          (unwind-protect
+              (progn
+                (lsp-workspace-folders-add dir)
+                (with-current-buffer buf
+                  (cl-letf (((symbol-value knob-symbol) t))
+                    (python-mode) ;; Any prog mode that triggers lsp-sonarlint triggers all its analyzers
+                    (lsp)
+                                        ;(print-tcp-server-buf)
+                    )
+                  (lsp-sonarlint--wait-for
+                   (lambda ()
+                     (print (format "called %s" knob-symbol))
+                     (when-let ((stats (lsp-diagnostics-stats-for file)))
+                       (when (< 0 (seq-reduce '+ stats 0))
+                         (setq diagnostics-updated t))))
+                   'lsp-diagnostics-updated-hook
+                   30)
+                  (gethash file (lsp-diagnostics t))))
+            (kill-buffer buf)
+            (lsp-workspace-folders-remove dir)))))
+;failure repro: (progn (ert ".*python.*") (ert ".*html.*"))
 
 (defun lsp-sonarlint--get-issue-codes (issues)
   (sort (mapcar (lambda (issue) (gethash "code" issue)) issues) #'string-lessp))
