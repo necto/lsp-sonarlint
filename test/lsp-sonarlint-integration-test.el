@@ -29,6 +29,11 @@
     (message (with-current-buffer (car buffers)
              (buffer-substring-no-properties (point-min) (point-max))))))
 
+(defun print-lsp-session (msg)
+  (print msg)
+  (lsp-describe-session)
+  (print (with-current-buffer "*lsp session*" (buffer-substring-no-properties (point-min) (point-max)))))
+
 (defun lsp-sonarlint--get-issues (file knob-symbol)
   ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
   (let ((lsp-enabled-clients '(sonarlint))
@@ -44,27 +49,32 @@
         (lsp-sonarlint-text-enabled nil)
         (lsp-sonarlint-typescript-enabled nil)
         (lsp-sonarlint-xml-enabled nil))
+    (print-lsp-session "before find file")
         (let ((buf (find-file-noselect file))
               (lsp-sonarlint-plugin-autodownload t))
+    (print-lsp-session "after find file")
           (unwind-protect
               (progn
                 (lsp-workspace-folders-add dir)
                 (with-current-buffer buf
                   (cl-letf (((symbol-value knob-symbol) t))
                     (python-mode) ;; Any prog mode that triggers lsp-sonarlint triggers all its analyzers
+    (print-lsp-session "before lsp")
                     (lsp)
+    (print-lsp-session "after lsp")
                                         ;(print-tcp-server-buf)
                     )
                   (lsp-sonarlint--wait-for
                    (lambda ()
-                     (print (format "called %s" knob-symbol))
                      (when-let ((stats (lsp-diagnostics-stats-for file)))
                        (when (< 0 (seq-reduce '+ stats 0))
                          (setq diagnostics-updated t))))
                    'lsp-diagnostics-updated-hook
                    30)
                   (gethash file (lsp-diagnostics t))))
+    (print-lsp-session "before kill-buffer")
             (kill-buffer buf)
+    (print-lsp-session "after kill-buffer")
             (lsp-workspace-folders-remove dir)))))
 ;failure repro: (progn (ert ".*python.*") (ert ".*html.*"))
 
