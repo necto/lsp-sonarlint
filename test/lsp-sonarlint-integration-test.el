@@ -14,31 +14,23 @@
               (while (not done) (accept-process-output nil 0.1))))
         (remove-hook hook #'setter)))))
 
-(defun find-matching-buffers (regex)
-  "Find buffers whose names match the given regular expression."
-  (let (matching-buffers)
-    (dolist (buffer (buffer-list))
-      (when (string-match regex (buffer-name buffer))
-        (push buffer matching-buffers)))
-    matching-buffers))
+(defun lsp-sonarlint--any-alive-workspaces ()
+  (< 0 (hash-table-count (lsp-session-folder->servers (lsp-session)))))
 
-(defun print-tcp-server-buf ()
-  (message (with-current-buffer "*tcp-server-sonarlint*::stderr"
-           (buffer-substring-no-properties (point-min) (point-max))))
-  (when-let ((buffers (find-matching-buffers "\\*tcp-server-sonarlint\\* <")))
-    (message (with-current-buffer (car buffers)
-             (buffer-substring-no-properties (point-min) (point-max))))))
-
-(defun print-lsp-session (msg)
-  (print msg)
-  (lsp-describe-session)
-  (print (with-current-buffer "*lsp session*" (buffer-substring-no-properties (point-min) (point-max)))))
+(defun wait-for-workspaces-to-die (timeout)
+  (with-timeout (timeout (error "Timed out waiting for the workspace to shutdown"))
+    (while (lsp-sonarlint--any-alive-workspaces)
+      (accept-process-output nil 0.1))))
 
 (defun lsp-sonarlint--get-issues (file knob-symbol)
-  ;; Any of lsp-sonarlint-modes-enabled enable all lsp-sonarlint languages
+  ;; It is important to start from a clean slate.
+  ;; If lsp-mode runs any servers already, the test might fall into a race condition,
+  ;; when a server was requested to stop, but did not quite shut down yet,
+  ;; lsp-mode might reopen the connection with the new FILE, thus communicating with the
+  ;; end-of-life server. This puts lsp-mode into a buggy state - it is a race condition in lsp-mode
+  (should (null (lsp-sonarlint--any-alive-workspaces)))
   (let ((lsp-enabled-clients '(sonarlint))
         (dir (file-name-directory file))
-        (python-indent-offset 4) ;; Silent the warning when enabling python-mode in non-python files
         ;; Disable all plugins to focus only on the issues from the knob-symbol
         (lsp-sonarlint-go-enabled nil)
         (lsp-sonarlint-html-enabled nil)
@@ -49,21 +41,15 @@
         (lsp-sonarlint-text-enabled nil)
         (lsp-sonarlint-typescript-enabled nil)
         (lsp-sonarlint-xml-enabled nil))
-    (print-lsp-session "before find file")
         (let ((buf (find-file-noselect file))
               (lsp-sonarlint-plugin-autodownload t))
-    (print-lsp-session "after find file")
           (unwind-protect
               (progn
                 (lsp-workspace-folders-add dir)
                 (with-current-buffer buf
                   (cl-letf (((symbol-value knob-symbol) t))
                     (python-mode) ;; Any prog mode that triggers lsp-sonarlint triggers all its analyzers
-    (print-lsp-session "before lsp")
-                    (lsp)
-    (print-lsp-session "after lsp")
-                                        ;(print-tcp-server-buf)
-                    )
+                    (lsp))
                   (lsp-sonarlint--wait-for
                    (lambda ()
                      (when-let ((stats (lsp-diagnostics-stats-for file)))
@@ -71,12 +57,11 @@
                          (setq diagnostics-updated t))))
                    'lsp-diagnostics-updated-hook
                    30)
-                  (gethash file (lsp-diagnostics t))))
-    (print-lsp-session "before kill-buffer")
+                  (gethash file (lsp-diagnostics t))
+                  ))
             (kill-buffer buf)
-    (print-lsp-session "after kill-buffer")
-            (lsp-workspace-folders-remove dir)))))
-;failure repro: (progn (ert ".*python.*") (ert ".*html.*"))
+            (lsp-workspace-folders-remove dir)
+            (wait-for-workspaces-to-die 10)))))
 
 (defun lsp-sonarlint--get-issue-codes (issues)
   (sort (mapcar (lambda (issue) (gethash "code" issue)) issues) #'string-lessp))
@@ -90,7 +75,6 @@
 (defun lsp-sonarlint--sample-file (fname)
   (concat (lsp-sonarlint--fixtures-dir) fname))
 
-;; TODO: make the paths relative!
 (ert-deftest lsp-sonarlint-python-reports-issues ()
   (require 'lsp-sonarlint-python)
   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.py")
