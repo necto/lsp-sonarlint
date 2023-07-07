@@ -179,7 +179,8 @@ analyzer"
 (lsp-register-custom-settings
  '(("sonarlint.disableTelemetry" lsp-sonarlint-disable-telemetry)
    ("sonarlint.testFilePattern" lsp-sonarlint-test-file-pattern)
-   ("sonarlint.output.showAnalyzerLogs" lsp-sonarlint-show-analyzer-logs)
+   ("sonarlint.output.showAnalyzerLogs" t) ;; TODO: change back to lsp-sonarlint-show-analyzer-logs
+   ("sonarlint.output.verboseLogs" t) ;; TODO: move to a defcustom
    ("sonarlint.ls.vmargs" lsp-sonarlint-vmargs)))
 
 (defun lsp-sonarlint--request-handlers ()
