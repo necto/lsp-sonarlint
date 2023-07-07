@@ -45,6 +45,10 @@
   (dolist (buffer (find-matching-buffers "\\*lsp-log:"))
     (with-current-buffer buffer
       (print (format "-=-=-=-=-=-=-=-=-=-=-=-=- BUFFER %s =-=-=-=-=-=-=-=-=-=-=-=-" (buffer-name)))
+      (print (buffer-substring-no-properties (point-min) (point-max)))))
+  (dolist (buffer (find-matching-buffers "\\*lsp-log\\*"))
+    (with-current-buffer buffer
+      (print (format "-=-=-=-=-=-=-=-=-=-=-=-=- BUFFER %s =-=-=-=-=-=-=-=-=-=-=-=-" (buffer-name)))
       (print (buffer-substring-no-properties (point-min) (point-max))))))
 
 (defun lsp-sonarlint--get-issues (file knob-symbol)
