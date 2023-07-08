@@ -61,6 +61,7 @@
   (setq lsp-sonarlint-show-analyzer-logs t)
   (setq lsp-server-trace "verbose")
   (setq lsp-log-io t)
+  (setq lsp-keep-workspace-alive nil) ;; keep this
   (setq lsp-enabled-clients 'sonarlint) ;; TODO: keep this after debugging is done too!
   (setq lsp-enable-snippet nil) ;; keep this
   (let ((lsp-enabled-clients '(sonarlint))
