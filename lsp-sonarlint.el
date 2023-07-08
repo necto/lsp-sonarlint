@@ -94,6 +94,11 @@ e.g https://<myServerUrl>"
   :group 'lsp-sonarlint
   :type 'boolean)
 
+(defcustom lsp-sonarlint-verbose-logs nil
+  "Enable verbose logging of the SonarLint language server."
+  :group 'lsp-sonarlint
+  :type 'boolean)
+
 (defcustom lsp-sonarlint-vmargs ""
   "Extra JVM arguments used to launch the SonarLint LSP.
 e.g. `-Xmx1024m`."
@@ -175,12 +180,11 @@ analyzer"
   '(("SonarLint.OpenRuleDesc" .
      (lambda (rule) (lsp-sonarlint--code-action-open-rule rule)))))
 
-
 (lsp-register-custom-settings
  '(("sonarlint.disableTelemetry" lsp-sonarlint-disable-telemetry)
    ("sonarlint.testFilePattern" lsp-sonarlint-test-file-pattern)
-   ("sonarlint.output.showAnalyzerLogs" t) ;; TODO: change back to lsp-sonarlint-show-analyzer-logs
-   ("sonarlint.output.verboseLogs" t) ;; TODO: move to a defcustom
+   ("sonarlint.output.showAnalyzerLogs" lsp-sonarlint-show-analyzer-logs)
+   ("sonarlint.output.verboseLogs" lsp-sonarlint-verbose-logs)
    ("sonarlint.ls.vmargs" lsp-sonarlint-vmargs)))
 
 (defun lsp-sonarlint--request-handlers ()

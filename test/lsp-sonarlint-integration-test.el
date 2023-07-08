@@ -22,35 +22,6 @@
     (while (lsp-sonarlint--any-alive-workspaces)
       (accept-process-output nil 0.1))))
 
-(defun find-matching-buffers (regex)
-  "Find buffers whose names match the given regular expression."
-  (let (matching-buffers)
-    (dolist (buffer (buffer-list))
-      (when (string-match regex (buffer-name buffer))
-        (push buffer matching-buffers)))
-    matching-buffers))
-
-(defun print-tcp-server-buf ()
-  (with-current-buffer "*tcp-server-sonarlint*::stderr"
-    (print (format "-=-=-=-=-=-=-=-=-=-=-=-=- BUFFER %s =-=-=-=-=-=-=-=-=-=-=-=-" (buffer-name)))
-    (print
-     (buffer-substring-no-properties (point-min) (point-max))))
-  (dolist (buffer (find-matching-buffers "\\*tcp-server-sonarlint\\* <"))
-    (with-current-buffer buffer
-      (print (format "-=-=-=-=-=-=-=-=-=-=-=-=- BUFFER %s =-=-=-=-=-=-=-=-=-=-=-=-" (buffer-name)))
-      (print
-       (buffer-substring-no-properties (point-min) (point-max))))))
-
-(defun print-io-buf ()
-  (dolist (buffer (find-matching-buffers "\\*lsp-log:"))
-    (with-current-buffer buffer
-      (print (format "-=-=-=-=-=-=-=-=-=-=-=-=- BUFFER %s =-=-=-=-=-=-=-=-=-=-=-=-" (buffer-name)))
-      (print (buffer-substring-no-properties (point-min) (point-max)))))
-  (dolist (buffer (find-matching-buffers "\\*lsp-log\\*"))
-    (with-current-buffer buffer
-      (print (format "-=-=-=-=-=-=-=-=-=-=-=-=- BUFFER %s =-=-=-=-=-=-=-=-=-=-=-=-" (buffer-name)))
-      (print (buffer-substring-no-properties (point-min) (point-max))))))
-
 (defun lsp-sonarlint--get-issues (file knob-symbol)
   ;; It is important to start from a clean slate.
   ;; If lsp-mode runs any servers already, the test might fall into a race condition,
@@ -58,14 +29,10 @@
   ;; lsp-mode might reopen the connection with the new FILE, thus communicating with the
   ;; end-of-life server. This puts lsp-mode into a buggy state - it is a race condition in lsp-mode
   (should (null (lsp-sonarlint--any-alive-workspaces)))
-  (setq lsp-sonarlint-show-analyzer-logs t)
-  (setq lsp-server-trace "verbose")
-  (setq lsp-log-io t)
-  (setq lsp-keep-workspace-alive nil) ;; keep this
-  (setq lsp-enabled-clients 'sonarlint) ;; TODO: keep this after debugging is done too!
-  (setq lsp-enable-snippet nil) ;; keep this
   (let ((lsp-enabled-clients '(sonarlint))
+        (lsp-keep-workspace-alive nil)
         (dir (file-name-directory file))
+        (lsp-enable-snippet nil)
         ;; Disable all plugins to focus only on the issues from the knob-symbol
         (lsp-sonarlint-go-enabled nil)
         (lsp-sonarlint-html-enabled nil)
@@ -92,10 +59,7 @@
                          (setq diagnostics-updated t))))
                    'lsp-diagnostics-updated-hook
                    30)
-                  (gethash file (lsp-diagnostics t))
-                  ))
-            (print-tcp-server-buf)
-            (print-io-buf)
+                  (gethash file (lsp-diagnostics t))))
             (kill-buffer buf)
             (lsp-workspace-folders-remove dir)
             (wait-for-workspaces-to-die 10)))))
@@ -119,61 +83,61 @@
     (should (equal (lsp-sonarlint--get-issue-codes issues)
                    '("python:S1135" "python:S1716")))))
 
-;; (ert-deftest lsp-sonarlint-java-reports-issues ()
-;;   (require 'lsp-sonarlint-java)
-;;   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.java")
-;;                                         'lsp-sonarlint-java-enabled)))
-;;     (should (equal (lsp-sonarlint--get-issue-codes issues)
-;;                    '("java:S106" "java:S1135" "java:S1220")))))
+(ert-deftest lsp-sonarlint-java-reports-issues ()
+  (require 'lsp-sonarlint-java)
+  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.java")
+                                        'lsp-sonarlint-java-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("java:S106" "java:S1135" "java:S1220")))))
 
-;; (ert-deftest lsp-sonarlint-html-reports-issues ()
-;;   (require 'lsp-sonarlint-html)
-;;   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.html")
-;;                                            'lsp-sonarlint-html-enabled)))
-;;     (should (equal (lsp-sonarlint--get-issue-codes issues)
-;;                    '("Web:S1135")))))
+(ert-deftest lsp-sonarlint-html-reports-issues ()
+  (require 'lsp-sonarlint-html)
+  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.html")
+                                           'lsp-sonarlint-html-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("Web:S1135")))))
 
-;; ;; javascript-sample.js must have a distinct name from sample.ts,
-;; ;; otherwise the javascript/typescript plugin gets confused.
-;; (ert-deftest lsp-sonarlint-js-reports-issues ()
-;;   (require 'lsp-sonarlint-javascript)
-;;   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "javascript-sample.js")
-;;                                            'lsp-sonarlint-javascript-enabled)))
-;;     (should (equal (lsp-sonarlint--get-issue-codes issues)
-;;                    '("javascript:S1134" "javascript:S1135")))))
+;; javascript-sample.js must have a distinct name from sample.ts,
+;; otherwise the javascript/typescript plugin gets confused.
+(ert-deftest lsp-sonarlint-js-reports-issues ()
+  (require 'lsp-sonarlint-javascript)
+  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "javascript-sample.js")
+                                           'lsp-sonarlint-javascript-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("javascript:S1134" "javascript:S1135")))))
 
-;; (ert-deftest lsp-sonarlint-ts-reports-issues ()
-;;   (require 'lsp-sonarlint-typescript)
-;;   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.ts")
-;;                                            'lsp-sonarlint-typescript-enabled)))
-;;     (should (equal (lsp-sonarlint--get-issue-codes issues)
-;;                    '("typescript:S1134" "typescript:S1135")))))
+(ert-deftest lsp-sonarlint-ts-reports-issues ()
+  (require 'lsp-sonarlint-typescript)
+  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.ts")
+                                           'lsp-sonarlint-typescript-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("typescript:S1134" "typescript:S1135")))))
 
-;; (ert-deftest lsp-sonarlint-php-reports-issues ()
-;;   (require 'lsp-sonarlint-php)
-;;   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.php")
-;;                                            'lsp-sonarlint-php-enabled)))
-;;     (should (equal (lsp-sonarlint--get-issue-codes issues)
-;;                    '("php:S1135" "php:S1780")))))
+(ert-deftest lsp-sonarlint-php-reports-issues ()
+  (require 'lsp-sonarlint-php)
+  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.php")
+                                           'lsp-sonarlint-php-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("php:S1135" "php:S1780")))))
 
-;; (ert-deftest lsp-sonarlint-xml-reports-issues ()
-;;   (require 'lsp-sonarlint-xml)
-;;   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.xml")
-;;                                            'lsp-sonarlint-xml-enabled)))
-;;     (should (equal (lsp-sonarlint--get-issue-codes issues)
-;;                    '("xml:S1135")))))
+(ert-deftest lsp-sonarlint-xml-reports-issues ()
+  (require 'lsp-sonarlint-xml)
+  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.xml")
+                                           'lsp-sonarlint-xml-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("xml:S1135")))))
 
-;; ;; "text" plugin detects secrets and bidirectional unicode characters
-;; (ert-deftest lsp-sonarlint-text-reports-issues ()
-;;   (require 'lsp-sonarlint-text)
-;;   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "secrets.java")
-;;                                            'lsp-sonarlint-text-enabled)))
-;;     (should (equal (lsp-sonarlint--get-issue-codes issues)
-;;                    '("secrets:S6290" "secrets:S6290" "secrets:S6290")))))
+;; "text" plugin detects secrets and bidirectional unicode characters
+(ert-deftest lsp-sonarlint-text-reports-issues ()
+  (require 'lsp-sonarlint-text)
+  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "secrets.java")
+                                           'lsp-sonarlint-text-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("secrets:S6290" "secrets:S6290" "secrets:S6290")))))
 
-;; (ert-deftest lsp-sonarlint-go-reports-issues ()
-;;   (require 'lsp-sonarlint-go)
-;;   (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.go")
-;;                                            'lsp-sonarlint-go-enabled)))
-;;     (should (equal (lsp-sonarlint--get-issue-codes issues)
-;;                    '("go:S1135")))))
+(ert-deftest lsp-sonarlint-go-reports-issues ()
+  (require 'lsp-sonarlint-go)
+  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.go")
+                                           'lsp-sonarlint-go-enabled)))
+    (should (equal (lsp-sonarlint--get-issue-codes issues)
+                   '("go:S1135")))))
