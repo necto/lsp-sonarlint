@@ -155,30 +155,29 @@ analyzer"
                enabled-member--analyzer-path))
            lsp-sonarlint--enabled-plugins))))
 
-(defun lsp-sonarlint--code-action-open-rule (rule)
-  "Create an HTML rendered buffer with the RULE text in it."
+(defun lsp-sonarlint--code-action-open-rule (_workspace params)
+  "Create a buffer with rendered rule from PARAMS text in it.
+
+Extracts the title ahd htmlDescription, and renders the HTML in a
+temporary buffer."
   (with-temp-buffer
-    (let* ((rule-title (format "%s" (aref (ht-get rule "arguments") 1)))
-	   (rule-formated-title (replace-regexp-in-string ">" " "
-							  (replace-regexp-in-string "<"  " "  rule-title)))
-	   (rule-body (aref  (ht-get rule "arguments" ) 2)))
-      (insert rule-formated-title)
+    (let* ((rule-title (format "<h1>%s</h1><hr/>" (ht-get params "name")))
+           (rule-body (ht-get params "htmlDescription")))
+      (insert rule-title)
        (insert "\n")
        (insert rule-body))
     (shr-render-buffer (current-buffer))))
 
 
 (defun lsp-sonarlint-server-start-fun (port)
-  "Lsp-sonarlint start function, it need PORT as parameter."
+  "Start lsp-sonarlint in TCP mode on port PORT."
   (-concat
-   `("java" "-jar" ,(eval  lsp-sonarlint-server-path )  ,(format "-port=%d" port))
+   `("java" "-jar" ,(eval  lsp-sonarlint-server-path)  ,(format "-port=%d" port))
    (mapcar (lambda (plugin-path) (format "-analyzers=%s" plugin-path))
            (lsp-sonarlint--plugin-list))))
 
 
-(defconst lsp-sonarlint--action-handlers
-  '(("SonarLint.OpenRuleDesc" .
-     (lambda (rule) (lsp-sonarlint--code-action-open-rule rule)))))
+(defconst lsp-sonarlint--action-handlers '())
 
 (lsp-register-custom-settings
  '(("sonarlint.disableTelemetry" lsp-sonarlint-disable-telemetry)
@@ -224,6 +223,7 @@ analyzer"
     ;; secrets. That'd be too booring to implement. Hopefully, the user is
     ;; paying attention and will notice anyway.
     (puthash "sonarlint/showNotificationForFirstSecretsIssue" (lambda (_workspace _params) nil) ht)
+    (puthash "sonarlint/showRuleDescription" #'lsp-sonarlint--code-action-open-rule ht)
     ht))
 
 (lsp-register-client
