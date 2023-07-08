@@ -42,27 +42,33 @@
         (lsp-sonarlint-php-enabled nil)
         (lsp-sonarlint-text-enabled nil)
         (lsp-sonarlint-typescript-enabled nil)
-        (lsp-sonarlint-xml-enabled nil))
-        (let ((buf (find-file-noselect file))
-              (lsp-sonarlint-plugin-autodownload t))
-          (unwind-protect
-              (progn
-                (lsp-workspace-folders-add dir)
-                (with-current-buffer buf
-                  (cl-letf (((symbol-value knob-symbol) t))
-                    (python-mode) ;; Any prog mode that triggers lsp-sonarlint triggers all its analyzers
-                    (lsp))
-                  (lsp-sonarlint--wait-for
-                   (lambda ()
-                     (when-let ((stats (lsp-diagnostics-stats-for file)))
-                       (when (< 0 (seq-reduce '+ stats 0))
-                         (setq diagnostics-updated t))))
-                   'lsp-diagnostics-updated-hook
-                   30)
-                  (gethash file (lsp-diagnostics t))))
-            (kill-buffer buf)
-            (lsp-workspace-folders-remove dir)
-            (wait-for-workspaces-to-die 10)))))
+        (lsp-sonarlint-xml-enabled nil)
+        received-warnings)
+    (let ((buf (find-file-noselect file))
+          (lsp-sonarlint-plugin-autodownload t)
+          (register-warning (lambda (&rest w) (when (equal (car w) 'lsp-mode)
+                                           (push (cadr w) received-warnings)))))
+      (unwind-protect
+          (progn
+            (advice-add 'display-warning :before register-warning)
+            (lsp-workspace-folders-add dir)
+            (with-current-buffer buf
+              (cl-letf (((symbol-value knob-symbol) t))
+                (python-mode) ;; Any prog mode that triggers lsp-sonarlint triggers all its analyzers
+                (lsp))
+              (lsp-sonarlint--wait-for
+               (lambda ()
+                 (when-let ((stats (lsp-diagnostics-stats-for file)))
+                   (when (< 0 (seq-reduce '+ stats 0))
+                     (setq diagnostics-updated t))))
+               'lsp-diagnostics-updated-hook
+               40)
+              (should (null received-warnings))
+              (gethash file (lsp-diagnostics t))))
+        (kill-buffer buf)
+        (lsp-workspace-folders-remove dir)
+        (advice-remove 'display-warning register-warning)
+        (wait-for-workspaces-to-die 10)))))
 
 (defun lsp-sonarlint--get-issue-codes (issues)
   (sort (mapcar (lambda (issue) (gethash "code" issue)) issues) #'string-lessp))

@@ -189,7 +189,41 @@ analyzer"
 
 (defun lsp-sonarlint--request-handlers ()
   (let ((ht (make-hash-table :test 'equal)))
+    ;; Check whether the file is just being previewed or is actually open in an editor
+    ;; to save some wasted work.
+    ;; I guess it is safe to assume, when lsp-mode sends a file over to the server,
+    ;; it is because it is open in editor.
     (puthash "sonarlint/isOpenInEditor" (lambda (_workspace _params) t) ht)
+    ;; Check if the file is ignored by Source Control Manager (a.k.e. VCS, version control system).
+    ;; I think this is related to .gitignore and similar files.
+    ;; Probably safe to assume as a first step that you don't care, and want your diagnostics.
+    ;; TODO: implement a proper check here.
+    (puthash "sonarlint/isIgnoredByScm" (lambda (_workspace _params) nil) ht)
+    ;; Get the VCS branch name. Let it be nil for now
+    ;; TODO: implement a proper response
+    (puthash "sonarlint/getBranchNameForFolder" (lambda (_workspace _params) nil) ht)
+    ;; Probably only relevant to the java analyzer.
+    ;; Some additional java configuration for the project.
+    ;; TODO: implement
+    (puthash "sonarlint/getJavaConfig" (lambda (_workspace _params) nil) ht)
+    ht))
+
+(defun lsp-sonarlint--notification-handlers ()
+  (let ((ht (make-hash-table :test 'equal)))
+    ;; Security Hotspots are a special kind of issue that have particular
+    ;; interface on SonarCloud, SonarQube, and in SonarLint. See
+    ;; https://docs.sonarcloud.io/digging-deeper/security-hotspots/ I presume
+    ;; the PARAMS contain a list of issues of this category, similar to the
+    ;; normal issues.
+    ;; TODO: display them, perhaps optionally, as they could be noisy sometimes,
+    ;; especially without the possibility to "review" them once and forever.
+    (puthash "sonarlint/publishSecurityHotspots" (lambda (_workspace _params) nil) ht)
+    ;; Not sure what this is for. Testing of SonarLint itself?
+    (puthash "sonarlint/readyForTests" (lambda (_workspace _params) nil) ht)
+    ;; This is probably just to raise awareness of the new kind of issues:
+    ;; secrets. That'd be too booring to implement. Hopefully, the user is
+    ;; paying attention and will notice anyway.
+    (puthash "sonarlint/showNotificationForFirstSecretsIssue" (lambda (_workspace _params) nil) ht)
     ht))
 
 (lsp-register-client
@@ -198,6 +232,7 @@ analyzer"
   :major-modes lsp-sonarlint-modes-enabled
   :priority -1
   :request-handlers (lsp-sonarlint--request-handlers)
+  :notification-handlers (lsp-sonarlint--notification-handlers)
   :multi-root t
   :add-on? t
   :server-id 'sonarlint
