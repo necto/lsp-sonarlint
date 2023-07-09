@@ -22,7 +22,7 @@
     (while (lsp-sonarlint--any-alive-workspaces)
       (accept-process-output nil 0.1))))
 
-(defun lsp-sonarlint--get-issues (file knob-symbol)
+(defun lsp-sonarlint--exec-with-diags (file knob-symbol diag-consumer)
   ;; It is important to start from a clean slate.
   ;; If lsp-mode runs any servers already, the test might fall into a race condition,
   ;; when a server was requested to stop, but did not quite shut down yet,
@@ -64,14 +64,15 @@
                'lsp-diagnostics-updated-hook
                40)
               (should (null received-warnings))
-              (gethash file (lsp-diagnostics t))))
+              (funcall diag-consumer (gethash file (lsp-diagnostics t)))))
         (kill-buffer buf)
         (lsp-workspace-folders-remove dir)
         (advice-remove 'display-warning register-warning)
         (wait-for-workspaces-to-die 10)))))
 
-(defun lsp-sonarlint--get-issue-codes (issues)
+(defun lsp-sonarlint--get-codes-of-issues (issues)
   (sort (mapcar (lambda (issue) (gethash "code" issue)) issues) #'string-lessp))
+
 
 (defun lsp-sonarlint--fixtures-dir ()
   (concat
@@ -82,68 +83,103 @@
 (defun lsp-sonarlint--sample-file (fname)
   (concat (lsp-sonarlint--fixtures-dir) fname))
 
+(defun lsp-sonarlint--get-all-issue-codes (sample-filename knob-symbol)
+  (lsp-sonarlint--exec-with-diags
+   (lsp-sonarlint--sample-file sample-filename) knob-symbol
+   (lambda (diags)
+     (lsp-sonarlint--get-codes-of-issues diags))))
+
 (ert-deftest lsp-sonarlint-python-reports-issues ()
   (require 'lsp-sonarlint-python)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.py")
-                                           'lsp-sonarlint-python-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("python:S1135" "python:S1716")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "sample.py" 'lsp-sonarlint-python-enabled)
+                 '("python:S1135" "python:S1716"))))
 
 (ert-deftest lsp-sonarlint-java-reports-issues ()
   (require 'lsp-sonarlint-java)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.java")
-                                        'lsp-sonarlint-java-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("java:S106" "java:S1135" "java:S1220")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "sample.java" 'lsp-sonarlint-java-enabled)
+                 '("java:S106" "java:S1135" "java:S1220"))))
 
 (ert-deftest lsp-sonarlint-html-reports-issues ()
   (require 'lsp-sonarlint-html)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.html")
-                                           'lsp-sonarlint-html-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("Web:S1135")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "sample.html" 'lsp-sonarlint-html-enabled)
+                 '("Web:S1135"))))
 
 ;; javascript-sample.js must have a distinct name from sample.ts,
 ;; otherwise the javascript/typescript plugin gets confused.
 (ert-deftest lsp-sonarlint-js-reports-issues ()
   (require 'lsp-sonarlint-javascript)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "javascript-sample.js")
-                                           'lsp-sonarlint-javascript-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("javascript:S1134" "javascript:S1135")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "javascript-sample.js" 'lsp-sonarlint-javascript-enabled)
+                 '("javascript:S1134" "javascript:S1135"))))
 
 (ert-deftest lsp-sonarlint-ts-reports-issues ()
   (require 'lsp-sonarlint-typescript)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.ts")
-                                           'lsp-sonarlint-typescript-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("typescript:S1134" "typescript:S1135")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "sample.ts" 'lsp-sonarlint-typescript-enabled)
+                 '("typescript:S1134" "typescript:S1135"))))
 
 (ert-deftest lsp-sonarlint-php-reports-issues ()
   (require 'lsp-sonarlint-php)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.php")
-                                           'lsp-sonarlint-php-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("php:S1135" "php:S1780")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "sample.php" 'lsp-sonarlint-php-enabled)
+                 '("php:S1135" "php:S1780"))))
 
 (ert-deftest lsp-sonarlint-xml-reports-issues ()
   (require 'lsp-sonarlint-xml)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.xml")
-                                           'lsp-sonarlint-xml-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("xml:S1135")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "sample.xml" 'lsp-sonarlint-xml-enabled)
+                 '("xml:S1135"))))
 
 ;; "text" plugin detects secrets and bidirectional unicode characters
 (ert-deftest lsp-sonarlint-text-reports-issues ()
   (require 'lsp-sonarlint-text)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "secrets.java")
-                                           'lsp-sonarlint-text-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("secrets:S6290" "secrets:S6290" "secrets:S6290")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "secrets.java" 'lsp-sonarlint-text-enabled)
+                 '("secrets:S6290" "secrets:S6290" "secrets:S6290"))))
 
 (ert-deftest lsp-sonarlint-go-reports-issues ()
   (require 'lsp-sonarlint-go)
-  (let ((issues (lsp-sonarlint--get-issues (lsp-sonarlint--sample-file "sample.go")
-                                           'lsp-sonarlint-go-enabled)))
-    (should (equal (lsp-sonarlint--get-issue-codes issues)
-                   '("go:S1135")))))
+  (should (equal (lsp-sonarlint--get-all-issue-codes "sample.go" 'lsp-sonarlint-go-enabled)
+                 '("go:S1135"))))
+
+(defun lsp-sonarlint--find-descr-action-at-point ()
+  (seq-find (lambda (action) (string-match-p "description" (gethash "title" action)))
+            (lsp-code-actions-at-point)))
+
+(defun lsp-sonarlint--buf-has-rule-descr (buf)
+  (with-current-buffer buf
+    (save-excursion
+      (goto-char (point-min))
+      (message "buffer %s : %s" (current-buffer)
+               (search-forward "Noncompliant" nil t)))
+    (save-excursion
+      (goto-char (point-min))
+      (search-forward "Noncompliant" nil t))))
+
+(defun lsp-sonarlint--go-to-first-diag (diags)
+  (let* ((first-diagnostic (car diags))
+         (diag-range (gethash "start" (gethash "range" first-diagnostic)))
+         (diag-line (gethash "line" diag-range))
+         (diag-col (gethash "character" diag-range)))
+    (goto-char (point-min))
+    (forward-line diag-line)
+    (forward-char diag-col)))
+
+(ert-deftest lsp-sonarlint-display-rule-descr-test ()
+  (require 'lsp-sonarlint-python)
+  (lsp-sonarlint--exec-with-diags
+   (lsp-sonarlint--sample-file "sample.py")
+   'lsp-sonarlint-python-enabled
+   (lambda (diags)
+     (lsp-sonarlint--go-to-first-diag diags)
+     (let ((descr-action (lsp-sonarlint--find-descr-action-at-point)))
+       (let ((description-opened nil))
+         (cl-flet ((check-opened-buffer
+                    (buf)
+                    (when (lsp-sonarlint--buf-has-rule-descr buf)
+                      (setq description-opened t))))
+           (unwind-protect
+               (progn
+                 (advice-add 'shr-render-buffer :before #'check-opened-buffer)
+                 (lsp-execute-code-action descr-action)
+                 (with-timeout (8 (error "Timeout waiting for rule description"))
+                   (while (not description-opened)
+                     (message "still waiting")
+                     (sit-for 0.1)))
+                 (should description-opened))
+             (advice-remove 'shr-render-buffer #'check-opened-buffer))))))))
