@@ -83,12 +83,6 @@ Example: `{**/test/**,**/*test*,**/*Test*}`"
   :group 'lsp-sonarlint
   :type 'string)
 
-(defcustom lsp-sonarlint-sonarqube-server-url ""
-  "URL of the SonarQube or SonarCloud server.
-e.g https://<myServerUrl>"
-  :group 'lsp-sonarlint
-  :type 'string)
-
 (defcustom lsp-sonarlint-show-analyzer-logs nil
   "Show analyzer's logs in the SonarLint output."
   :group 'lsp-sonarlint
