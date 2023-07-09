@@ -65,7 +65,7 @@
                                          java-mode
                                          xml-mode
                                          nxml-mode)
-  "List of enabled major modes."
+  "List of major modes that enable SonarLint backend for LSP mode."
   :group 'lsp-sonarlint
   :type 'file)
 
@@ -84,7 +84,7 @@ Example: `{**/test/**,**/*test*,**/*Test*}`"
   :type 'string)
 
 (defcustom lsp-sonarlint-sonarqube-server-url ""
-  "URL of the server.
+  "URL of the SonarQube or SonarCloud server.
 e.g https://<myServerUrl>"
   :group 'lsp-sonarlint
   :type 'string)
@@ -112,7 +112,8 @@ e.g. `-Xmx1024m`."
   :type 'string)
 
 (defcustom lsp-sonarlint-plugin-autodownload nil
-  "Whether to go ahead and download missing plugins not asking for a confirmation."
+  "Whether to go ahead and download missing plugins not asking for a confirmation.
+Useful for batch testing."
   :group 'lsp-sonarlint
   :type 'boolean)
 
@@ -122,16 +123,17 @@ e.g. `-Xmx1024m`."
     (error "There was an error with the `load-file-name` function")))
 
 (defun lsp-sonarlint--remove-duplicate-plugins (jars)
-  "Return copy of JARS with duplicates removed, otherwise SonarLint complains.
-
+  "Return copy of JARS with duplicates removed.
 The duplicates may occur if the same plugin implements different languages,
-for example sonar-javascript.jar covers both JavaScript and TypeScript."
+for example sonar-javascript.jar covers both JavaScript and TypeScript.
+If a duplicate occurs, SonarLint will throw an exception."
   (cl-remove-duplicates jars :test #'equal :key (lambda (jar-path) (file-name-base jar-path))))
 
 (defun lsp-sonarlint--plugin-list ()
   "Check for the enabled extensions and return a path list.
-If the analyzer path is not a file, it ask for download the
-analyzer"
+If the analyzer path is not a file, and
+lsp-sonarlint-plugin-autodownload is not nil it offers to
+download the analyzer, and does that."
   (let* ((lsp-sonarlint--enabled-plugins
 	  (-filter (lambda (member)
 		     (when (eval
@@ -157,7 +159,6 @@ analyzer"
 
 (defun lsp-sonarlint--code-action-open-rule (_workspace params)
   "Create a buffer with rendered rule from PARAMS text in it.
-
 Extracts the title ahd htmlDescription, and renders the HTML in a
 temporary buffer."
   (with-temp-buffer
@@ -170,7 +171,7 @@ temporary buffer."
 
 
 (defun lsp-sonarlint-server-start-fun (port)
-  "Start lsp-sonarlint in TCP mode on port PORT."
+  "Start lsp-sonarlint in TCP mode listening to port PORT."
   (-concat
    `("java" "-jar" ,(eval  lsp-sonarlint-server-path)  ,(format "-port=%d" port))
    (mapcar (lambda (plugin-path) (format "-analyzers=%s" plugin-path))
@@ -187,6 +188,8 @@ temporary buffer."
    ("sonarlint.ls.vmargs" lsp-sonarlint-vmargs)))
 
 (defun lsp-sonarlint--request-handlers ()
+  "SonarLint-specific request handlers.
+See REQUEST-HANDLERS in lsp--client in lsp-mode."
   (let ((ht (make-hash-table :test 'equal)))
     ;; Check whether the file is just being previewed or is actually open in an editor
     ;; to save some wasted work.
@@ -208,6 +211,8 @@ temporary buffer."
     ht))
 
 (defun lsp-sonarlint--notification-handlers ()
+  "SonarLint-specific notification handlers.
+See NOTIFICATION-HANDLERS in lsp--client in lsp-mode."
   (let ((ht (make-hash-table :test 'equal)))
     ;; Security Hotspots are a special kind of issue that have particular
     ;; interface on SonarCloud, SonarQube, and in SonarLint. See
