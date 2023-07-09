@@ -2,7 +2,6 @@
 ;;;
 ;; Author: Arseniy Zaostrovnykh
 ;; Created: 10 Jun 2023
-;; Version: 0.0.1
 ;; License: GPL-3.0-or-later
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -236,3 +235,5 @@ and get the issues from the server."
                      (sit-for 0.1)))
                  (should description-opened))
              (advice-remove 'shr-render-buffer #'check-opened-buffer))))))))
+
+;; TODO: create a mock cpp analyzer and use it to add a test here

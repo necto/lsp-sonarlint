@@ -64,6 +64,8 @@
                                          python-mode
                                          java-mode
                                          xml-mode
+                                         c++-mode
+                                         c-mode
                                          nxml-mode)
   "List of major modes that enable SonarLint backend for LSP mode."
   :group 'lsp-sonarlint
