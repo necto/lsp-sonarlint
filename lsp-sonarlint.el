@@ -159,7 +159,17 @@ Extracts the title ahd htmlDescription, and renders the HTML in a
 temporary buffer."
   (with-temp-buffer
     (let* ((rule-title (format "<h1>%s</h1><hr/>" (ht-get params "name")))
-           (rule-body (ht-get params "htmlDescription")))
+           (rule-body (concat (ht-get params "htmlDescription"))))
+      (seq-doseq (rule-tab (ht-get params "htmlDescriptionTabs"))
+        (setq rule-body
+              (concat
+               rule-body
+               (ht-get (ht-get rule-tab "ruleDescriptionTabNonContextual") "htmlContent")
+               (apply #'concat (mapcar (lambda (contextual-tab)
+                                         (format "<h2>%s</h2>\n%s"
+                                                 (ht-get contextual-tab "displayName")
+                                                 (ht-get contextual-tab "htmlContent")))
+                                       (ht-get rule-tab "ruleDescriptionTabContextual"))))))
       (insert rule-title)
        (insert "\n")
        (insert rule-body))
