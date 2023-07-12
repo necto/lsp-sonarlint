@@ -213,14 +213,16 @@ If none of them contains FNAME, return nil."
 
 (defun lsp-sonarlint--set-compile-commands (_workspace _params)
   "Find compile_commands.json and set it for the workspace.
-As a side effect it will also send the found path to the LonarLint server."
+As a side effect it will also send the found path to the SonarLint server."
   (let ((fname (lsp-sonarlint--get-compile-commands)))
     (unless (string-empty-p fname)
       (message "Using compilation database from %s." fname)
       (custom-set-variables `(lsp-sonarlint-path-to-compile-commands ,(expand-file-name fname))))))
 
-;; TODO: add an interactive function to change compile commands for current workspace
-;; TODO: cache compile commands path in the lsp-sworkspace-set-metadata
+(defun lsp-sonarlint-set-compile-commands (fname)
+  "Set the path to the compile_commands.json file for current session."
+  (interactive "fCompilation DB path: ")
+  (custom-set-variables `(lsp-sonarlint-path-to-compile-commands ,(expand-file-name fname))))
 
 (lsp-register-custom-settings
  '(("sonarlint.disableTelemetry" lsp-sonarlint-disable-telemetry)
