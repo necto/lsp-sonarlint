@@ -186,6 +186,42 @@ temporary buffer."
 
 (defconst lsp-sonarlint--action-handlers '())
 
+(defcustom-lsp lsp-sonarlint-path-to-compile-commands ""
+  "Path to the compilation DB - the compiler_commands.json file."
+  :type 'path
+  :group 'lsp-sonarlint
+  :lsp-path "sonarlint.pathToCompileCommands")
+
+(defun lsp-sonarlint--find-file-in-parent-folders (fname)
+  "Find the closest FNAME in a buffer folder or one of its parents.
+Traverse the parent folders from narrow to wide (/a/b/c, /a/b, /a, /).
+If none of them contains FNAME, return nil."
+  (let ((dir (file-name-directory (expand-file-name (buffer-file-name))))
+        (found-file nil))
+    (while (not (or found-file (string-empty-p dir) (string-equal dir "/")))
+      (let ((potential-file (concat dir fname)))
+        (message potential-file)
+        (if (file-exists-p potential-file)
+            (setq found-file potential-file)
+          (setq dir (file-name-directory (directory-file-name dir))))))
+    found-file))
+
+(defun lsp-sonarlint--get-compile-commands ()
+  "Find compile_commands.json in the parent dir or ask user."
+  (or (lsp-sonarlint--find-file-in-parent-folders "compile_commands.json")
+      (read-file-name "Provide path to compile_commands.json for this project: ")))
+
+(defun lsp-sonarlint--set-compile-commands (_workspace _params)
+  "Find compile_commands.json and set it for the workspace.
+As a side effect it will also send the found path to the LonarLint server."
+  (let ((fname (lsp-sonarlint--get-compile-commands)))
+    (unless (string-empty-p fname)
+      (message "Using compilation database from %s." fname)
+      (custom-set-variables `(lsp-sonarlint-path-to-compile-commands ,(expand-file-name fname))))))
+
+;; TODO: add an interactive function to change compile commands for current workspace
+;; TODO: cache compile commands path in the lsp-sworkspace-set-metadata
+
 (lsp-register-custom-settings
  '(("sonarlint.disableTelemetry" lsp-sonarlint-disable-telemetry)
    ("sonarlint.testFilePattern" lsp-sonarlint-test-file-pattern)
@@ -235,6 +271,7 @@ See NOTIFICATION-HANDLERS in lsp--client in lsp-mode."
     ;; paying attention and will notice anyway.
     (puthash "sonarlint/showNotificationForFirstSecretsIssue" (lambda (_workspace _params) nil) ht)
     (puthash "sonarlint/showRuleDescription" #'lsp-sonarlint--code-action-open-rule ht)
+    (puthash "sonarlint/needCompilationDatabase" #'lsp-sonarlint--set-compile-commands ht)
     ht))
 
 (lsp-register-client
@@ -244,7 +281,7 @@ See NOTIFICATION-HANDLERS in lsp--client in lsp-mode."
   :priority -1
   :request-handlers (lsp-sonarlint--request-handlers)
   :notification-handlers (lsp-sonarlint--notification-handlers)
-  :multi-root t
+  :multi-root nil
   :add-on? t
   :server-id 'sonarlint
   :action-handlers (ht<-alist lsp-sonarlint--action-handlers)
@@ -255,7 +292,8 @@ See NOTIFICATION-HANDLERS in lsp--client in lsp-mode."
   :initialized-fn (lambda (workspace)
                     (with-lsp-workspace workspace
                       (lsp--set-configuration
-                       (lsp-configuration-section "sonarlint"))))))
+                       (lsp-configuration-section "sonarlint"))))
+  :synchronize-sections '("sonarlint")))
 
 (provide 'lsp-sonarlint)
 ;;; lsp-sonarlint.el ends here

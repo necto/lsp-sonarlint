@@ -1,4 +1,4 @@
-;;; integration.el --- Integration tests for Sonarlint LSP client   -*- lexical-binding: t; -*-
+;;; lsp-sonarlint-integration-test.el --- Integration tests for Sonarlint LSP client   -*- lexical-binding: t; -*-
 ;;;
 ;; Author: Arseniy Zaostrovnykh
 ;; Created: 10 Jun 2023
@@ -25,6 +25,7 @@
 
 (require 'lsp-mode)
 (require 'lsp-sonarlint)
+(requrie 'lsp-sonarlint-test-utils)
 
 (defun lsp-sonarlint--wait-for (predicate hook timeout)
   "Register PREDICATE to run on HOOK, and wait until it returns t.
@@ -108,23 +109,12 @@ It can perform further interaction with LSP, e.g., execute code actions."
   (sort (mapcar (lambda (issue) (gethash "code" issue)) issues) #'string-lessp))
 
 
-(defun lsp-sonarlint--fixtures-dir ()
-  "Directory of the test fixtures for these tests."
-  (concat
-   (file-name-directory
-    (directory-file-name (file-name-directory (symbol-file #'lsp-sonarlint--fixtures-dir))))
-   "fixtures/"))
-
-(defun lsp-sonarlint--sample-file (fname)
-  "Get the full path of the sample file FNAME."
-  (concat (lsp-sonarlint--fixtures-dir) fname))
-
 (defun lsp-sonarlint--get-all-issue-codes (sample-filename knob-symbol)
   "Get all SonarLint issue-codes for given SAMPLE-FILENAME with KNOB-SYMBOL on.
 This functions takes some time to wait for the LSP mode to init
 and get the issues from the server."
   (lsp-sonarlint--exec-with-diags
-   (lsp-sonarlint--sample-file sample-filename) knob-symbol
+   (lsp-sonarlint-sample-file sample-filename) knob-symbol
    (lambda (diags)
      (lsp-sonarlint--get-codes-of-issues diags))))
 
@@ -215,7 +205,7 @@ and get the issues from the server."
   "Check whether you can display rule description for a SonarLint issue."
   (require 'lsp-sonarlint-python)
   (lsp-sonarlint--exec-with-diags
-   (lsp-sonarlint--sample-file "sample.py")
+   (lsp-sonarlint-sample-file "sample.py")
    'lsp-sonarlint-python-enabled
    (lambda (diags)
      (lsp-sonarlint--go-to-first-diag diags)
@@ -237,3 +227,5 @@ and get the issues from the server."
              (advice-remove 'shr-render-buffer #'check-opened-buffer))))))))
 
 ;; TODO: create a mock cpp analyzer and use it to add a test here
+
+;;; lsp-sonarlint-integration-test.el ends here
