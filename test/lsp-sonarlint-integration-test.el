@@ -25,7 +25,7 @@
 
 (require 'lsp-mode)
 (require 'lsp-sonarlint)
-(requrie 'lsp-sonarlint-test-utils)
+(require 'lsp-sonarlint-test-utils)
 
 (defun lsp-sonarlint--wait-for (predicate hook timeout)
   "Register PREDICATE to run on HOOK, and wait until it returns t.

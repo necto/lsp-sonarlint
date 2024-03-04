@@ -178,6 +178,10 @@ temporary buffer."
 
 (defun lsp-sonarlint-server-start-fun (port)
   "Start lsp-sonarlint in TCP mode listening to port PORT."
+  (message (-concat
+   `("java" "-jar" ,(eval  lsp-sonarlint-server-path)  ,(format "-port=%d" port))
+   (mapcar (lambda (plugin-path) (format "-analyzers=%s" plugin-path))
+           (lsp-sonarlint--plugin-list))))
   (-concat
    `("java" "-jar" ,(eval  lsp-sonarlint-server-path)  ,(format "-port=%d" port))
    (mapcar (lambda (plugin-path) (format "-analyzers=%s" plugin-path))
@@ -296,6 +300,8 @@ See NOTIFICATION-HANDLERS in lsp--client in lsp-mode."
                       (lsp--set-configuration
                        (lsp-configuration-section "sonarlint"))))
   :synchronize-sections '("sonarlint")))
+
+(message "!!!+_+_+_+_My version of lst-sonarlint.el is loaded")
 
 (provide 'lsp-sonarlint)
 ;;; lsp-sonarlint.el ends here
