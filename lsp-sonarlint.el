@@ -58,7 +58,7 @@ It contains the necessary language server and analyzers."
   :type 'string)
 
 (defcustom lsp-sonarlint-download-dir
-  (concat (file-name-directory load-file-name) "sonarlint-vscode")
+  (concat (file-name-directory (or load-file-name (buffer-file-name))) "sonarlint-vscode")
   "Location where VSCode's sonarlint extension should be found.
 If absent, it will be downloaded from github and unzipped there."
   :group 'lsp-sonarlint
@@ -287,7 +287,11 @@ temporary buffer."
           (insert rule-body-title)
           (insert "\n")
           (insert rule-body-content))))
-    (shr-render-buffer (current-buffer))))
+    (let ((shr-external-rendering-functions
+           (if (require 'shr-tag-pre-highlight nil :noerror)
+               (cons '(pre . shr-tag-pre-highlight) shr-external-rendering-functions)
+             shr-external-rendering-functions)))
+      (shr-render-buffer (current-buffer)))))
 
 (defun lsp-sonarlint--analyze-folder(dirname)
   "Return t if DIRNAME should be analyzed.
@@ -360,8 +364,7 @@ See `lsp-sonarlint-analyze-folder' to see which files are ignored."
    ("sonarlint/getJavaConfig" #'ignore))
 
   "SonarLint-specific request handlers.
-See REQUEST-HANDLERS in lsp--client in lsp-mode."
-  )
+See REQUEST-HANDLERS in lsp--client in lsp-mode.")
 
 (defvar lsp-sonarlint--notification-handlers
   (lsp-ht
