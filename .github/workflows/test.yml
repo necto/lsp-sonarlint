@@ -31,7 +31,7 @@ jobs:
             emacs-version: snapshot
             experimental: true
           - os: windows-latest
-            emacs-version: snapshot
+            emacs-version: 29.3
             experimental: true
         exclude:
           - os: macos-latest
